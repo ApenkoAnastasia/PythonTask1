@@ -1,0 +1,156 @@
+from bs4 import BeautifulSoup
+import requests
+
+url = 'https://afisha.tut.by/film/'   
+page = requests.get(url)  
+
+soup = BeautifulSoup(page.text, 'html.parser') #запустит обработку документа page.text, чтобы получить объект BeautifulSoup, то есть дерево синтаксического разбора этой страницы, полученной с помощью встроенного html.parser через HTML
+
+list_elements = soup.find('div',{'class':'events-block js-cut_wrapper'}, {'id': 'events-block'}).findAll('li', {'class': 'lists__li'})
+
+links = []
+for el in list_elements:
+    ln = el.findAll('a',{'class': 'name'})
+    if ln:
+        links.append(ln[0]['href'])
+        
+def genre(page):
+    soup = BeautifulSoup(page.text, 'html.parser')
+    container = soup.find('td',{'class': 'genre'})
+    res = ''
+    if container is not None:
+        for para in container.find_all('p'):
+            res = res + para.text + ' '
+    else:
+        res = 'No data'
+    return res    
+
+def year(page):
+    soup = BeautifulSoup(page.text, 'html.parser')
+    container = soup.find('td',{'class': 'year'}) 
+    if container is not None:
+        res = container.find('a', recursive = False)
+        if res is not None:
+            res = container.find('a', recursive = False).text
+        else:
+            res = 'No data'
+    else:
+        res = 'No data'
+    return res
+
+def country(page):
+    soup = BeautifulSoup(page.text, 'html.parser')
+    res = soup.find('td',{'class': 'author'})
+    if res is not None:
+        res = soup.find('td',{'class': 'author'}).text 
+    else:
+        res = 'No data'
+    return res
+
+def duration(page):
+    soup = BeautifulSoup(page.text, 'html.parser')
+    res = soup.find('td',{'class': 'duration'}) 
+    if res is not None:
+        res = soup.find('td',{'class': 'duration'}).text 
+    else:
+        res = 'No data'
+    return res
+
+def end(page):
+    soup = BeautifulSoup(page.text, 'html.parser')
+    res = soup.find('td',{'class': 'date'}) 
+    if res is not None:
+        res = soup.find('td',{'class': 'date'}).text 
+    else:
+        res = 'No data'
+    return res
+
+def director(page):
+    soup = BeautifulSoup(page.text, 'html.parser')
+    container = soup.find('td',{'class': 'post b-event-post'})
+    if container is not None:
+        res = container.find('p', recursive = False)
+        if res is not None:
+            res = container.find('p', recursive = False).text[10:]
+        else:
+            res = 'No data'
+    else:
+        res = 'No data'
+    return res
+
+def actors(page):
+    soup = BeautifulSoup(page.text, 'html.parser')
+    container = soup.find('td',{'class': 'post b-event-post'})
+    if container is not None:
+        if len(container.findAll('p', recursive = False)) > 1:
+            h = container.findAll('p', recursive = False)[0]
+            h.decompose()
+            res = container.find('p', recursive = False).text[9:]
+        else:
+            res = 'No data'
+    else:
+        res = 'No data'
+    return res
+
+def rating(page):
+    soup = BeautifulSoup(page.text, 'html.parser')
+    res = soup.find('span',{'class': 'rating-big__value'})
+    if res is not None:
+        res = res.text
+    else:
+        res = 'No data'
+    return res
+
+def age(page):
+    soup = BeautifulSoup(page.text, 'html.parser')
+    container = soup.find('div',{'class': 'title__labels'})
+    if len(container.findAll('span', {'class', 'label'})) != 0:
+        if len(container.findAll('span', {'class', 'label'})) == 1:
+             for element in container.findAll('span', {'class', 'label'}):
+                if 'Премьера' not in element.text:
+                    res = container.find('span', {'class', 'label'}).text
+                else:
+                    res = 'No data'
+        else:
+            h = container.findAll('span', {'class', 'label'})[0]
+            h.decompose()
+            res = container.find('span', {'class', 'label'}).text
+    else:
+        res = 'No data'
+    return res
+
+def description(page):
+    soup = BeautifulSoup(page.text, 'html.parser')
+    res = soup.find('div',{'class': 'post'})
+    if res is not None:
+        res.div.decompose()
+        res.p.decompose()
+        res.div.decompose()
+        res.script.decompose() 
+        #print(res.text)
+    else:
+        res = 'No data'
+    return res.text  
+
+N = len(links)
+print('Общее число фильмов, идущих в кинотеатрах: ',N)
+
+movies = {}
+for url in links[:]:
+    print(url)
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    name = soup.find('h1',{'id': 'event-name'}).text
+    print(name)
+    movies[name] = {}
+    movies[name]['url'] = url
+    movies[name]['genre'] = genre(response)
+    movies[name]['year'] = year(response)
+    movies[name]['country'] = country(response)
+    movies[name]['duration'] = duration(response)
+    movies[name]['end'] = end(response)
+    movies[name]['director'] = director(response)
+    movies[name]['actors'] = actors(response)
+    movies[name]['rating'] = rating(response)
+    movies[name]['age'] = age(response) 
+    movies[name]['description'] = description(response)    
