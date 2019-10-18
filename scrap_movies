@@ -136,7 +136,7 @@ N = len(links)
 print('Общее число фильмов, идущих в кинотеатрах: ',N)
 
 movies = {}
-for url in links[:]:
+for url in links:
     print(url)
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -154,3 +154,43 @@ for url in links[:]:
     movies[name]['rating'] = rating(response)
     movies[name]['age'] = age(response) 
     movies[name]['description'] = description(response)    
+    
+import pyspark
+from pyspark.sql import SparkSession
+import pandas as pd
+import pyspark.sql.functions as f
+
+spark = SparkSession.builder.appName("load data").getOrCreate()
+
+sc = spark.sparkContext
+
+pdDF = pd.DataFrame(movies).transpose()
+pdDF
+
+movies_df = spark.createDataFrame(pdDF)
+movies_df.createOrReplaceTempView("all_movies")
+
+movies_df.groupBy("age").count().show()
+
+filtered_mov = spark.sql("SELECT AGE, COUNT(*) FROM all_movies GROUP BY AGE")
+filtered_mov.createOrReplaceTempView("movies_by_age")
+filtered_mov.show()
+
+t_countries = spark.sql("SELECT COUNTRY FROM all_movies")
+countries = t_countries.select("COUNTRY", f.split("COUNTRY", ", ").alias("COUNTRY"),f.posexplode(f.split("COUNTRY", ", ")).alias("pos", "DIF_COUNTRY")).select("DIF_COUNTRY")
+
+countries.createOrReplaceTempView("all_countries")
+country_quantity = spark.sql("SELECT DIF_COUNTRY, COUNT(*) FROM all_countries GROUP BY DIF_COUNTRY")
+country_quantity.createOrReplaceTempView("movies_by_country")
+country_quantity.show()
+
+t_actors = spark.sql("SELECT ACTORS FROM all_movies")
+actors = t_actors.select("ACTORS",f.split("ACTORS", ", ").alias("ACTORS"),f.posexplode(f.split("ACTORS", ", ")).alias("pos", "DIF_ACTORS")).select("DIF_ACTORS")
+
+actors.createOrReplaceTempView("all_actors")
+actors_quantity = spark.sql("SELECT DIF_ACTORS, COUNT(*) FROM all_actors GROUP BY DIF_ACTORS")
+actors_quantity.createOrReplaceTempView("movies_by_actors")
+actors_quantity.show()
+
+spark.sql('show tables').show()
+
