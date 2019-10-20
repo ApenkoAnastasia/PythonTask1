@@ -210,7 +210,7 @@ for i in range(0,l):
     lab.append(l_array[i][0])
 
 DF_age_pie = pd.DataFrame({'Age limit': count}, index = lab)
-plot = DF_age_pie.plot.pie(y='Age limit', figsize=(8, 9))
+plot = DF_age_pie.plot.pie(y='Age limit', figsize=(8, 9), autopct='%1.1f%%', shadow=True, legend = True, fontsize = 14)
 
 DF_age_bar = pd.DataFrame({'Age limit': lab, 'Quantity': count})
 age_bar = DF_age_bar.plot.bar(x = 'Age limit', y = 'Quantity', rot = 0)
@@ -246,7 +246,7 @@ for i in range(0,k):
     lab_countries.append(countries_array[i][0])
     
 DF_countries_pie = pd.DataFrame({'Countries part': count_countries}, index = lab_countries)
-plot_countries = DF_countries_pie.plot.pie(y='Countries part', figsize=(15, 18))
+plot_countries = DF_countries_pie.plot.pie(y='Countries part', figsize=(15, 18), autopct='%1.1f%%', shadow=True, legend = True, fontsize = 14)
 
 DF_countries_bar = pd.DataFrame({'Countries part': lab_countries, 'Quantity': count_countries})
 country_bar = DF_countries_bar.plot.bar(x = 'Countries part', y = 'Quantity', rot = 0)
