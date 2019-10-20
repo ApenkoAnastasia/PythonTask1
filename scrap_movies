@@ -172,7 +172,7 @@ movies_df.createOrReplaceTempView("all_movies")
 
 movies_df.groupBy("age").count().show()
 
-filtered_mov = spark.sql("SELECT AGE, COUNT(*) FROM all_movies GROUP BY AGE")
+filtered_mov = spark.sql("SELECT AGE, COUNT(*) AS QUANTITY FROM all_movies GROUP BY AGE")
 filtered_mov.createOrReplaceTempView("movies_by_age")
 filtered_mov.show()
 
@@ -180,7 +180,7 @@ t_countries = spark.sql("SELECT COUNTRY FROM all_movies")
 countries = t_countries.select("COUNTRY", f.split("COUNTRY", ", ").alias("COUNTRY"),f.posexplode(f.split("COUNTRY", ", ")).alias("pos", "DIF_COUNTRY")).select("DIF_COUNTRY")
 
 countries.createOrReplaceTempView("all_countries")
-country_quantity = spark.sql("SELECT DIF_COUNTRY, COUNT(*) FROM all_countries GROUP BY DIF_COUNTRY")
+country_quantity = spark.sql("SELECT DIF_COUNTRY, COUNT(*) AS QUANTITY FROM all_countries GROUP BY DIF_COUNTRY")
 country_quantity.createOrReplaceTempView("movies_by_country")
 country_quantity.show()
 
@@ -188,9 +188,113 @@ t_actors = spark.sql("SELECT ACTORS FROM all_movies")
 actors = t_actors.select("ACTORS",f.split("ACTORS", ", ").alias("ACTORS"),f.posexplode(f.split("ACTORS", ", ")).alias("pos", "DIF_ACTORS")).select("DIF_ACTORS")
 
 actors.createOrReplaceTempView("all_actors")
-actors_quantity = spark.sql("SELECT DIF_ACTORS, COUNT(*) FROM all_actors GROUP BY DIF_ACTORS")
+actors_quantity = spark.sql("SELECT DIF_ACTORS, COUNT(*) AS QUANTITY FROM all_actors GROUP BY DIF_ACTORS")
 actors_quantity.createOrReplaceTempView("movies_by_actors")
 actors_quantity.show()
 
 spark.sql('show tables').show()
 
+
+import numpy as np
+
+q_array =  np.array(filtered_mov.select("QUANTITY").collect())
+l_array = np.array(filtered_mov.select("AGE").collect())
+l = len(q_array)
+
+count = []
+for i in range(0,l):
+    count.append(q_array[i][0])
+
+lab = []
+for i in range(0,l):
+    lab.append(l_array[i][0])
+
+DF_age_pie = pd.DataFrame({'Age limit': count}, index = lab)
+plot = DF_age_pie.plot.pie(y='Age limit', figsize=(8, 9))
+
+DF_age_bar = pd.DataFrame({'Age limit': lab, 'Quantity': count})
+age_bar = DF_age_bar.plot.bar(x = 'Age limit', y = 'Quantity', rot = 0)
+
+from wordcloud import WordCloud, STOPWORDS
+import matplotlib.pyplot as plt
+
+text = pdDF.director.values
+wordcloud = WordCloud(
+    width = 3000,
+    height = 2000,
+    background_color = 'black',
+    stopwords = STOPWORDS).generate(str(text))
+fig = plt.figure(
+    figsize = (40, 30),
+    facecolor = 'k',
+    edgecolor = 'k')
+plt.imshow(wordcloud, interpolation = 'bilinear')
+plt.axis('off')
+plt.tight_layout(pad=0)
+plt.show()
+
+c_q_array =  np.array(country_quantity.select("QUANTITY").collect())
+countries_array = np.array(country_quantity.select("DIF_COUNTRY").collect())
+k = len(c_q_array)
+
+count_countries = []
+for i in range(0,k):
+    count_countries.append(c_q_array[i][0])
+
+lab_countries = []
+for i in range(0,k):
+    lab_countries.append(countries_array[i][0])
+    
+DF_countries_pie = pd.DataFrame({'Countries part': count_countries}, index = lab_countries)
+plot_countries = DF_countries_pie.plot.pie(y='Countries part', figsize=(15, 18))
+
+DF_countries_bar = pd.DataFrame({'Countries part': lab_countries, 'Quantity': count_countries})
+country_bar = DF_countries_bar.plot.bar(x = 'Countries part', y = 'Quantity', rot = 0)
+
+a_q_array =  np.array(actors_quantity.select("QUANTITY").collect())
+actors_array = np.array(actors_quantity.select("DIF_ACTORS").collect())
+m = len(a_q_array)
+
+count_actors = []
+for i in range(0,m):
+    count_actors.append(a_q_array[i][0])
+
+lab_actors = []
+for i in range(0,m):
+    lab_actors.append(actors_array[i][0])
+    
+DF_actors_pie = pd.DataFrame({'Actors part': count_actors}, index = lab_actors)
+plot_actors = DF_actors_pie.plot.pie(y='Actors part', figsize=(15, 18))
+
+DF_actors_bar = pd.DataFrame({'Actors part': lab_actors, 'Quantity': count_actors})
+actors_bar = DF_actors_bar.plot.bar(x = 'Actors part', y = 'Quantity', rot = 0)
+
+text1 = DF_actors_pie.index.values
+wordcloud = WordCloud(
+    width = 3000,
+    height = 2000,
+    background_color = 'black',
+    stopwords = STOPWORDS).generate(str(text1))
+fig = plt.figure(
+    figsize = (40, 30),
+    facecolor = 'k',
+    edgecolor = 'k')
+plt.imshow(wordcloud, interpolation = 'bilinear')
+plt.axis('off')
+plt.tight_layout(pad=0)
+plt.show()
+
+text2 = pdDF.description.values
+wordcloud = WordCloud(
+    width = 3000,
+    height = 2000,
+    background_color = 'black',
+    stopwords = STOPWORDS).generate(str(text2))
+fig = plt.figure(
+    figsize = (40, 30),
+    facecolor = 'k',
+    edgecolor = 'k')
+plt.imshow(wordcloud, interpolation = 'bilinear')
+plt.axis('off')
+plt.tight_layout(pad=0)
+plt.show()
